@@ -9,6 +9,7 @@ import (
 
 	"github.com/DataDog/datadog-go/statsd"
 	jwtmiddleware "github.com/auth0/go-jwt-middleware"
+	"github.com/checkr/flagr/pkg/util"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/gohttp/pprof"
 	negronilogrus "github.com/meatballhat/negroni-logrus"
@@ -76,6 +77,10 @@ func SetupGlobalMiddleware(handler http.Handler) http.Handler {
 
 	if Config.JWTAuthEnabled {
 		n.Use(setupJWTAuthMiddleware())
+	}
+
+	if Config.JWTRequireGroupClaim != "" {
+		n.Use(setupJWTRequireGroupClaimMiddleware())
 	}
 
 	n.Use(&negroni.Static{
@@ -204,6 +209,41 @@ func (a *auth) ServeHTTP(w http.ResponseWriter, req *http.Request, next http.Han
 		return
 	}
 	a.JWTMiddleware.HandlerWithNext(w, req, next)
+}
+
+type requireGroupClaim struct {
+	Group string
+}
+
+func setupJWTRequireGroupClaimMiddleware() *requireGroupClaim {
+	return &requireGroupClaim{
+		Group: Config.JWTRequireGroupClaim,
+	}
+}
+
+func (c *requireGroupClaim) checkGroups(r *http.Request) bool {
+	token, ok := r.Context().Value(Config.JWTAuthUserProperty).(*jwt.Token)
+	if !ok {
+		return false
+	}
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		groups := util.SafeStringSlice(claims["groups"])
+		for _, s := range groups {
+			if s == c.Group {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func (c *requireGroupClaim) ServeHTTP(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+	if !c.checkGroups(r) {
+		jwtErrorHandler(w, r, "Not member of authorized group")
+		return
+	}
+	next(w, r)
 }
 
 type statsdMiddleware struct {

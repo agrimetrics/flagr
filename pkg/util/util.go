@@ -49,6 +49,14 @@ func SafeString(s interface{}) (ret string) {
 	return cast.ToString(s)
 }
 
+// SafeStringSlice cast to string slice
+func SafeStringSlice(s interface{}) (ret []string) {
+	if s == nil {
+		return []string{}
+	}
+	return cast.ToStringSlice(s)
+}
+
 // SafeUint returns the uint of the value
 func SafeUint(s interface{}) (ret uint) {
 	return cast.ToUint(s)

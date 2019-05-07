@@ -29,6 +29,13 @@ func TestSafeStringWithDefault(t *testing.T) {
 	assert.Equal(t, SafeStringWithDefault(nil, "<nil>"), "<nil>")
 }
 
+func TestSafeStringSlice(t *testing.T) {
+	assert.Equal(t, []string{"123"}, SafeStringSlice([]string{"123"}))
+	assert.Equal(t, []string{"123", "456"}, SafeStringSlice([]string{"123", "456"}))
+	assert.Equal(t, []string{}, SafeStringSlice([]string{}))
+	assert.Equal(t, []string{}, SafeStringSlice(nil))
+}
+
 func TestSafeUint(t *testing.T) {
 	assert.Equal(t, SafeUint(nil), uint(0))
 	assert.Equal(t, SafeUint("123"), uint(123))
