@@ -178,8 +178,8 @@ var Config = struct {
 	// E.g. sub, email, user, name, and etc in a JWT token.
 	JWTAuthUserClaim string `env:"FLAGR_JWT_AUTH_USER_CLAIM" envDefault:"sub"`
 
-	// JWTRequireGroupClaim can be used to assert that groups claim must contain this named group
-	JWTRequireGroupClaim string `env:"FLAGR_JWT_AUTH_REQUIRE_GROUP_CLAIM" envDefault:""`
+	// JWTAuthRequireGroupClaim can be used to assert that groups claim must contain this named group
+	JWTAuthRequireGroupClaim string `env:"FLAGR_JWT_AUTH_REQUIRE_GROUP_CLAIM" envDefault:""`
 
 	// "HS256" and "RS256" supported
 	JWTAuthSigningMethod string `env:"FLAGR_JWT_AUTH_SIGNING_METHOD" envDefault:"HS256"`

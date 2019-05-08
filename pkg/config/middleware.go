@@ -1,6 +1,7 @@
 package config
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -79,7 +80,7 @@ func SetupGlobalMiddleware(handler http.Handler) http.Handler {
 		n.Use(setupJWTAuthMiddleware())
 	}
 
-	if Config.JWTRequireGroupClaim != "" {
+	if Config.JWTAuthRequireGroupClaim != "" {
 		n.Use(setupJWTRequireGroupClaimMiddleware())
 	}
 
@@ -186,6 +187,9 @@ type auth struct {
 func (a *auth) whitelist(req *http.Request) bool {
 	path := req.URL.Path
 
+	if Config.WebPrefix != "" {
+		path = strings.TrimPrefix(path, Config.WebPrefix)
+	}
 	// If we set to 401 unauthorized, let the client handles the 401 itself
 	if Config.JWTAuthNoTokenStatusCode == http.StatusUnauthorized {
 		for _, p := range a.ExactWhitelistPaths {
@@ -203,8 +207,11 @@ func (a *auth) whitelist(req *http.Request) bool {
 	return false
 }
 
+type whiteListed struct{}
+
 func (a *auth) ServeHTTP(w http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
 	if a.whitelist(req) {
+		req = req.WithContext(context.WithValue(req.Context(), whiteListed{}, true))
 		next(w, req)
 		return
 	}
@@ -217,11 +224,15 @@ type requireGroupClaim struct {
 
 func setupJWTRequireGroupClaimMiddleware() *requireGroupClaim {
 	return &requireGroupClaim{
-		Group: Config.JWTRequireGroupClaim,
+		Group: Config.JWTAuthRequireGroupClaim,
 	}
 }
 
 func (c *requireGroupClaim) checkGroups(r *http.Request) bool {
+	whiteListed, ok := r.Context().Value(whiteListed{}).(bool)
+	if whiteListed {
+		return true
+	}
 	token, ok := r.Context().Value(Config.JWTAuthUserProperty).(*jwt.Token)
 	if !ok {
 		return false

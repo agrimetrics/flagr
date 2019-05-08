@@ -46,12 +46,12 @@ require (
 	github.com/jinzhu/inflection v0.0.0-20180308033659-04140366298a // indirect
 	github.com/jinzhu/now v1.0.0 // indirect
 	github.com/jpillora/backoff v0.0.0-20170918002102-8eab2debe79d // indirect
-	github.com/kr/pretty v0.1.0 // indirect
 	github.com/lib/pq v1.0.0 // indirect
 	github.com/mailru/easyjson v0.0.0-20180823135443-60711f1a8329 // indirect
 	github.com/mattn/go-sqlite3 v1.9.0 // indirect
 	github.com/meatballhat/negroni-logrus v0.0.0-20170801195057-31067281800f
 	github.com/mitchellh/mapstructure v1.1.2 // indirect
+	github.com/myitcv/gobin v0.0.9 // indirect
 	github.com/newrelic/go-agent v2.1.0+incompatible
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect

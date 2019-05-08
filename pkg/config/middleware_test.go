@@ -51,10 +51,10 @@ func TestSetupGlobalMiddleware(t *testing.T) {
 	assert.NotNil(t, hh)
 	Config.JWTAuthEnabled = false
 
-	Config.JWTRequireGroupClaim = "groupA"
+	Config.JWTAuthRequireGroupClaim = "groupA"
 	hh = SetupGlobalMiddleware(h)
 	assert.NotNil(t, hh)
-	Config.JWTRequireGroupClaim = ""
+	Config.JWTAuthRequireGroupClaim = ""
 
 	Config.PProfEnabled = false
 	hh = SetupGlobalMiddleware(h)
@@ -118,6 +118,30 @@ func TestAuthMiddleware(t *testing.T) {
 		res := httptest.NewRecorder()
 		res.Body = new(bytes.Buffer)
 		req, _ := http.NewRequest("GET", fmt.Sprintf("http://localhost:18000%s", Config.JWTAuthPrefixWhitelistPaths[0]), nil)
+		hh.ServeHTTP(res, req)
+		assert.Equal(t, http.StatusOK, res.Code)
+	})
+
+	t.Run("it will pass if jwt enabled but with whitelisted path, when web prefix set", func(t *testing.T) {
+		savedPrefixes := Config.JWTAuthPrefixWhitelistPaths
+		Config.JWTAuthEnabled = true
+		Config.WebPrefix = "/prefix"
+		Config.JWTAuthNoTokenStatusCode = http.StatusUnauthorized
+		Config.JWTAuthPrefixWhitelistPaths = []string{"/api/v1/evaluation", "/static"}
+		Config.JWTAuthRequireGroupClaim = "groupA"
+		defer func() {
+			Config.JWTAuthEnabled = false
+			Config.WebPrefix = ""
+			Config.JWTAuthNoTokenStatusCode = http.StatusTemporaryRedirect
+			Config.JWTAuthPrefixWhitelistPaths = savedPrefixes
+			Config.JWTAuthRequireGroupClaim = ""
+		}()
+
+		hh := SetupGlobalMiddleware(h)
+
+		res := httptest.NewRecorder()
+		res.Body = new(bytes.Buffer)
+		req, _ := http.NewRequest("GET", fmt.Sprintf("http://localhost:18000/prefix%s", Config.JWTAuthPrefixWhitelistPaths[0]), nil)
 		hh.ServeHTTP(res, req)
 		assert.Equal(t, http.StatusOK, res.Code)
 	})
@@ -304,11 +328,11 @@ func TestRequireGroupClaimMiddleware(t *testing.T) {
 	t.Run("it will return 200 when JWT has expected group", func(t *testing.T) {
 		Config.JWTAuthEnabled = true
 		Config.JWTAuthNoTokenStatusCode = http.StatusUnauthorized
-		Config.JWTRequireGroupClaim = "admins"
+		Config.JWTAuthRequireGroupClaim = "admins"
 		defer func() {
 			Config.JWTAuthEnabled = false
 			Config.JWTAuthNoTokenStatusCode = http.StatusTemporaryRedirect
-			Config.JWTRequireGroupClaim = ""
+			Config.JWTAuthRequireGroupClaim = ""
 		}()
 
 		hh := SetupGlobalMiddleware(h)
@@ -323,11 +347,11 @@ func TestRequireGroupClaimMiddleware(t *testing.T) {
 	t.Run("it will return 401 when JWT does not have expected group", func(t *testing.T) {
 		Config.JWTAuthEnabled = true
 		Config.JWTAuthNoTokenStatusCode = http.StatusUnauthorized
-		Config.JWTRequireGroupClaim = "superusers"
+		Config.JWTAuthRequireGroupClaim = "superusers"
 		defer func() {
 			Config.JWTAuthEnabled = false
 			Config.JWTAuthNoTokenStatusCode = http.StatusTemporaryRedirect
-			Config.JWTRequireGroupClaim = ""
+			Config.JWTAuthRequireGroupClaim = ""
 		}()
 
 		hh := SetupGlobalMiddleware(h)
@@ -342,11 +366,11 @@ func TestRequireGroupClaimMiddleware(t *testing.T) {
 	t.Run("it will return 401 when JWT does not have groups claim", func(t *testing.T) {
 		Config.JWTAuthEnabled = true
 		Config.JWTAuthNoTokenStatusCode = http.StatusUnauthorized
-		Config.JWTRequireGroupClaim = "admins"
+		Config.JWTAuthRequireGroupClaim = "admins"
 		defer func() {
 			Config.JWTAuthEnabled = false
 			Config.JWTAuthNoTokenStatusCode = http.StatusTemporaryRedirect
-			Config.JWTRequireGroupClaim = ""
+			Config.JWTAuthRequireGroupClaim = ""
 		}()
 
 		hh := SetupGlobalMiddleware(h)
